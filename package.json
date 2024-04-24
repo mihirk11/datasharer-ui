@@ -1,0 +1,14 @@
+{
+  "name": "datasharer-ui",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@duckdb/duckdb-wasm": "^1.28.1-dev106.0"
+  }
+}

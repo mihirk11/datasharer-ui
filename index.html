@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DuckDB WASM Demo</title>
+  </head>
+  <body>
+    <h1>DuckDB WASM Demo</h1>
+    <label for="query">Enter SQL query:</label><br />
+    <input type="text" id="query" name="query" /><br />
+    <button id="runQueryButton">Run Query</button>
+    <div id="output"></div>
+    <script type="module">
+      import * as duckdb from "https://cdn.jsdelivr.net/npm/@duckdb/duckdb-wasm@1.28.1-dev106.0/+esm";
+
+      const JSDELIVR_BUNDLES = duckdb.getJsDelivrBundles();
+
+      // Select a bundle based on browser checks
+      const bundle = await duckdb.selectBundle(JSDELIVR_BUNDLES);
+
+      const worker_url = URL.createObjectURL(
+        new Blob([`importScripts("${bundle.mainWorker}");`], {
+          type: "text/javascript",
+        })
+      );
+
+      // Instantiate the asynchronus version of DuckDB-wasm
+      const worker = new Worker(worker_url);
+      const logger = new duckdb.ConsoleLogger();
+      const db = new duckdb.AsyncDuckDB(logger, worker);
+      await db.instantiate(bundle.mainModule, bundle.pthreadWorker);
+      URL.revokeObjectURL(worker_url);
+
+      async function executeQuery() {
+        const queryInput = document.getElementById("query");
+        const queryString = queryInput.value;
+
+        console.log("Executing query: " + queryString);
+        const c = await db.connect();
+        console.log("!!!!!!!!!!!!");
+        const result = await c.query(queryString);
+        //const t = result.toArray().map(Object.fromEntries);
+        const table = document.createElement("table");
+        result.toArray().forEach((row) => {
+          const tr = document.createElement("tr");
+          Object.values(row).forEach((value) => {
+            const td = document.createElement("td");
+            td.textContent = value.toString();
+            tr.appendChild(td);
+          });
+          table.appendChild(tr);
+        });
+        //console.table(t);
+        const outputDiv = document.getElementById("output");
+        outputDiv.appendChild(table);
+        // try {
+        //   // Load the DuckDB WASM module
+        //   //await duckdb.init();
+
+        //   // Open a new in-memory database
+        //   //const db = new duckdb.Database();
+        //   //const duckdb = new DuckDB();
+        //   //const db = new DuckDBDatabase(duckdb);
+
+        //   // Execute the user-provided query
+        //   const result = db.exec(queryString);
+
+        //   // Display the result
+        //   const outputDiv = document.getElementById("output");
+        //   outputDiv.innerHTML = ""; // Clear previous output
+        //   const table = document.createElement("table");
+        //   const headers = document.createElement("tr");
+
+        //   // Display column headers
+        //   result.getColumnNames().forEach((colName) => {
+        //     const th = document.createElement("th");
+        //     th.textContent = colName;
+        //     headers.appendChild(th);
+        //   });
+        //   table.appendChild(headers);
+
+        //   // Display result rows
+        //   result.fetchAllAsObjects().forEach((row) => {
+        //     const tr = document.createElement("tr");
+        //     Object.values(row).forEach((value) => {
+        //       const td = document.createElement("td");
+        //       td.textContent = value.toString();
+        //       tr.appendChild(td);
+        //     });
+        //     table.appendChild(tr);
+        //   });
+        //   outputDiv.appendChild(table);
+        // } catch (error) {
+        //   // If an error occurs, display it to the user
+        //   const outputDiv = document.getElementById("output");
+        //   outputDiv.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+        // }
+      }
+
+      // Add event listener to execute query when button is clicked
+      document
+        .getElementById("runQueryButton")
+        .addEventListener("click", executeQuery);
+    </script>
+  </body>
+</html>
